@@ -1,0 +1,154 @@
+For the below error go to the /etc/ssh/sshd_config and uncomment below line in sshd_config file
+ERROR : Permission denied (publickey,gssapi-keyex,gssapi-with-mic).
+#PasswordAuthentication yes
+
+
+passwd userid --> to add password to the userid
+
+The below two commands creates ssh keys and adds to authorized keys
+
+ssh-keygen -t dsa -P '' -f ~/.ssh/id_dsa
+cat ~/.ssh/id_dsa.pub >> ~/.ssh/authorized_keys
+
+now do ssh localhost # you should be able to enter without password
+
+Install java in CEntos :
+
+yum -y update
+yum install java-1.8.0-openjdk
+
+Get java path :
+update-alternatives --config java
+
+now update .bashrc file
+and add below line
+export JAVA_HOME = '/usr/lib/jvm/jre-1.8.0-openjdk'
+
+
+
+install java in Ubuntu:
+
+sudo add-apt-repository ppa:openjdk-r/ppa
+sudo apt-get update
+
+sudo apt-get install openjdk-8-jdk
+
+mkdir hadoop
+
+sudo wget https://mirrors.sonic.net/apache/hadoop/common/hadoop-2.7.7/hadoop-2.7.7.tar.gz
+
+tar xvf hadoop-2.7.7.tar.gz
+
+share folder has all the jar files
+
+
+add java install location to hadoop-env.sh
+/usr/lib/jvm/java-1.8.0-openjdk-amd64/bin
+
+
+go to the hadoop-2.7.7 folder
+and enter bin/hadoop
+
+you should see basic hadoop commands
+
+update below files :
+
+
+core-site.xml update below parameters in the <configuration> field
+<property>
+	<name>fs.defaultFS</name>
+	<value>hdfs://localhost:9000</value>
+</property>
+
+hdfs-site.xml:
+<property>
+	<name>dfs.replication</name>
+	<value>1</value>
+</property>
+
+yarn-site.xml
+
+<property>
+	<name>yarn.nodemanager.aux-services</name>
+	<value>mapreduce_shuffle</value>
+</property>
+
+mapred-site.xml
+<property>
+	<name>mapreduce.framework.name</name>
+	<value>yarn</value>
+</property>
+
+
+Run the below command  for the first time only :
+sudo bin/hdfs namenode -format
+
+output message:
+20/07/23 21:38:32 INFO util.ExitUtil: Exiting with status 0
+20/07/23 21:38:32 INFO namenode.NameNode: SHUTDOWN_MSG:
+/************************************************************
+SHUTDOWN_MSG: Shutting down NameNode at localhost/127.0.0.1
+************************************************************/
+go to sbin in hadoop and start-dfs.sh
+start-yarn.sh
+
+
+
+
+hive :
+download https://mirrors.estointernet.in/apache/hive/hive-2.3.7/apache-hive-2.3.7-bin.tar.gz
+
+tar -xvf apache-hive-2.3.7-bin.tar.gz
+
+open bashrc
+
+
+export HIVE_HOME='/home/vagrant/hadoop/apache-hive-2.3.7-bin'
+export PATH=$PATH:$HIVE_HOME/bin
+
+export HADOOP_HOME='/home/vagrant/hadoop/hadoop-2.7.7'
+export PATH=$PATH:$HADOOP_HOME/bin
+
+export CLASSPATH=$CLASSPATH:$HADOOP_HOME/lib*:.
+export CLASSPATH=$CLASSPATH:$HIVE_HOME/lib/*
+
+
+
+cd apache-hive-2.3.7-bin/conf
+cp hive-default.xml.template hive-default.xml
+
+make below changes
+
+hive /conf folder
+
+<property>
+	<name>javax.jdo.option.ConnectionURL</name>
+	<value>jdbc:derby:;databaseName=metastore_db;create=true</value>
+</property>
+
+
+replace ${system:java.io.tmpdir} with /tmp/hive_io
+replace ${system:user.name} with userid (vagrant)
+
+create below directories:
+hadoop fs -mkdir /tmp
+hadoop fs -mkdir /user
+hadoop fs -mkdir /user/hive
+hadoop fs -mkdir /user/hive/warehouse
+
+give below permissions
+
+hadoop fs -chmod g+w /tmp
+hadoop fs -chmod g+w /user
+hadoop fs -chmod g+w /user/hive
+hadoop fs -chmod g+w /user/hive/warehouse
+
+check HIVE prompt by entering hive ---> it will not work
+
+You will get below error:
+FAILED: SemanticException org.apache.hadoop.hive.ql.metadata.HiveException: java.lang.RuntimeException: Unable to instantiate org.apache.hadoop.hive.ql.metadata.SessionHiveMetaStoreClient
+
+do the following it will get sorted :
+mv metastore_db metastore_db.tmp
+schematool -initSchema -dbType derby
+
